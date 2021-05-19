@@ -1,70 +1,129 @@
-const Engine = Matter.Engine;
-const World = Matter.World;
-const Bodies = Matter.Bodies;
-var thunder, thunder1,thunder2,thunder3,thunder4;
-
-var engine, world;
-var drops = [];
-var rand;
-
-var maxDrops=100;
-
-var thunderCreatedFrame=0;
+var monk , monkey_running;
+var ban ,bananaImage, obstacle, obstacleImage;
+var bananaGroup, obstacleGroup,ground;
+var score=0,gamestate="play",sound,gameoverimg,edges,so;
 
 function preload(){
-    thunder1 = loadImage("thunderbolt/1.png");
-    thunder2 = loadImage("thunderbolt/2.png");
-    thunder3 = loadImage("thunderbolt/3.png");
-    thunder4 = loadImage("thunderbolt/4.png");
+  
+  
+  monkey_running =loadAnimation("sprite_0.png","sprite_1.png","sprite_2.png","sprite_3.png","sprite_4.png","sprite_5.png","sprite_6.png","sprite_7.png",
+"sprite_8.png")
+  
+  bananaImage = loadImage("banana.png");
+  obstacleImage = loadImage("obstacle.png");
+  sound=loadSound("game-over.wav");
+  gameoverimg=loadImage("gameover.png");
+  so=loadSound("banana.wav");
+ 
 }
 
-function setup(){
-    engine = Engine.create();
-    world = engine.world;
 
-    createCanvas(400,700);
-    umbrella = new Umbrella(200,500);
-    if(frameCount % 150 === 0){
 
-        for(var i=0; i<maxDrops; i++){
-            drops.push(new createDrop(random(0,400), random(0,400)));
-        }
+function setup()
+{
+  createCanvas(1300,575);
+  // edges=createEdgeSprites();
+   monkey();
+  
+ ground=createSprite(0,displayHeight,2000,50);
+ ground.shapeColor="green";
 
-    }
-    
+  //creating groups
+  bananaGroup=createGroup();
+  obstacleGroup=createGroup(); 
 }
 
-function draw(){
-    Engine.update(engine);
-    background(0); 
-    rand = Math.round(random(1,4));
-    if(frameCount%80===0){
-        thunderCreatedFrame=frameCount;
-        thunder = createSprite(random(10,370), random(10,30), 10, 10);
-        switch(rand){
-            case 1: thunder.addImage(thunder1);
-            break;
-            case 2: thunder.addImage(thunder2);
-            break; 
-            case 3: thunder.addImage(thunder3);
-            break;
-            case 4: thunder.addImage(thunder4);
-            break;
-            default: break;
-        }
-        thunder.scale = random(0.3,0.6)
-    }
 
-    if(thunderCreatedFrame + 10 ===frameCount && thunder){
-        thunder.destroy();
-    }
+function draw() 
+{
+  camera.position.x = monk.x
+  camera.position.y = monk.y;
+background("black");
+  if(gamestate=="play")
+{ 
+  //space
+  if(keyDown("space") && monk.y>500 && gamestate=="play")
+     {
+     monk.velocityY=-10;
+     }
+  //gravity
+  monk.velocityY=monk.velocityY+1;
+  if(frameCount%150==0 && gamestate=="play")
+  { 
+    obstacles();
+  }
+  var rand=Math.round(random(100,200));
+  if(frameCount%rand==0 && gamestate=="play")
+     {
+     banana();
+     }
+   
+  if(bananaGroup.isTouching(monk) && gamestate=="play")
+  {
+    score=score+100;
+    bananaGroup.destroyEach();
+    so.play();
+  }
+  if(obstacleGroup.isTouching(monk) && gamestate=="play")
+  {
+     bananaGroup.destroyEach();
+     obstacleGroup.destroyEach();
+      bananaGroup.setLifetimeEach();
+     obstacleGroup.setLifetimeEach();
+    gamestate="gameover";
+    sound.play();
+    //change
+    monk.addImage("m",gameoverimg);
+    monk.scale=1;
+    monk.width=600;
+    monk.height=600;
+    monk.x=300;
+    monk.y=300;
+    score=0;
+  }
+}
+  if((mousePressedOver(monk)) && gamestate=="gameover")
+     {
+       gamestate="play";
+       //score=0;
+       monk.addAnimation("m",monkey_running);
+       monk.scale=0.2;
+     }
 
-    umbrella.display();
-    for(var i = 0; i<maxDrops; i++){
-        drops[i].showDrop();
-        drops[i].updateY()
-        
-    }
+  monk.collide(ground);
+  drawSprites();
+  fill("red");
+  textSize(20);
+  text("Score:"+score,10,50);
+ 
+}
 
-    drawSprites();
+//creating monkey
+function monkey()
+{
+   monk=createSprite(300,0,50,50);
+   monk.addAnimation("m",monkey_running);
+   monk.scale=0.2;
+  
+}
+function obstacles()
+{
+  obstacle=createSprite(1300,650,50,50);
+  obstacle.addImage("ob",obstacleImage);
+  obstacle.velocityX=-(5+score/100);
+  obstacleGroup.add(obstacle);
+  obstacle.scale=0.2;
+  obstacleGroup.setLifetime=100;
+  
+  obstacle.setCollider("rectangle",0,0,50,50);
+}
+function banana()
+{
+  var rand =Math.round(random(500,600))
+  ban=createSprite(1300,rand,20,20);
+  ban.addImage("b",bananaImage);
+  ban.velocityX=-5;
+  ban.scale=0.1;
+  bananaGroup.add(ban);
+  bananaGroup.setLifetime=120;
 }
